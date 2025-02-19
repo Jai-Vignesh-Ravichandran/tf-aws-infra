@@ -1,6 +1,6 @@
 provider "aws" {
-  region = var.aws_region
-  profile="dev"
+  region  = var.aws_region
+  profile = "dev"
 }
 
 # Creating the VPC
