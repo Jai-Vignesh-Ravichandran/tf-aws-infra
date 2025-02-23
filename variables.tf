@@ -27,3 +27,14 @@ variable "private_subnet_cidrs" {
   description = "List of CIDR blocks for the private subnets (one per AZ)"
   type        = list(string)
 }
+
+variable "ami_id" {
+  description = "AMI ID for EC2 instance"
+  type        = string
+}
+
+variable "app_port" {
+  description = "Port on which the web application runs"
+  type        = number
+  default = 8080
+}
