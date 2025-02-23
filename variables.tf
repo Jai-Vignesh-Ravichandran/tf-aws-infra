@@ -36,5 +36,5 @@ variable "ami_id" {
 variable "app_port" {
   description = "Port on which the web application runs"
   type        = number
-  default = 8080
+  default     = 8080
 }
