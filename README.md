@@ -1,6 +1,5 @@
 
-# tf-aws-infra
-
+# tf-aws-infra 
 This project contains Terraform configurations for provisioning infrastructure on AWS. It defines and manages resources such as compute instances, networking, and other cloud services using Infrastructure as Code (IaC).
 
 ## Prerequisites
@@ -13,7 +12,7 @@ Before using this Terraform configuration, ensure you have:
 - Access keys or a configured IAM role for Terraform execution
 
 
-## Usage
+## Usages
 
 ### 1. Initialize Terraform
 Run the following command to initialize Terraform and download the required provider plugins:
