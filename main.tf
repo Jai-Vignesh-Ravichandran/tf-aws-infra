@@ -16,7 +16,7 @@ resource "aws_vpc" "this" {
 
 # Creating the Internet Gateway and attach it to the VPC
 resource "aws_internet_gateway" "this" {
-  vpc_id = aws_vpc.this.id
+  vpc_id = aws_vpc.this.bad
 
   tags = {
     Name = "${var.vpc_name}-igw"
