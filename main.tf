@@ -157,7 +157,7 @@ resource "aws_instance" "webapp" {
   }
 
   # Pass PostgreSQL database connection details to the application via user_data
-user_data = <<-EOF
+  user_data = <<-EOF
   #!/bin/bash
   # Create .env file with RDS details
   cat <<EOT > /opt/csye6225/webapp/.env
@@ -240,10 +240,10 @@ resource "aws_security_group" "db_sg" {
   vpc_id      = aws_vpc.this.id
 
   ingress {
-    description    = "Allow PostgreSQL traffic from app security group"
-    from_port      = 5432                  
-    to_port        = 5432
-    protocol       = "tcp"
+    description     = "Allow PostgreSQL traffic from app security group"
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
     security_groups = [aws_security_group.app_sg.id]
   }
 
@@ -264,16 +264,16 @@ resource "aws_security_group" "db_sg" {
 # RDS Parameter Group for PostgreSQL
 resource "aws_db_parameter_group" "custom" {
   name        = "csye6225-custom-parameter-group"
-  family      = "postgres17"  
+  family      = "postgres17"
   description = "Custom parameter group for csye6225 PostgreSQL database"
 
   parameter {
     name         = "max_connections"
     value        = "100"
-    apply_method = "pending-reboot"  
+    apply_method = "pending-reboot"
   }
   parameter {
-    name = "password_encryption"
+    name  = "password_encryption"
     value = "md5"
   }
 
@@ -296,21 +296,21 @@ resource "aws_db_subnet_group" "this" {
 
 # RDS Instance 
 resource "aws_db_instance" "rds" {
-  identifier              = "csye6225"
-  engine                  = "postgres"
+  identifier = "csye6225"
+  engine     = "postgres"
   # engine_version          = "17"            
-  instance_class          = "db.t3.micro"     
-  allocated_storage       = 20
-  username                = var.db_username
-  password                = var.db_master_password
-  db_name                 = var.db_name
-  multi_az                = false
-  publicly_accessible     = false
-  storage_type            = "gp2"
-  db_subnet_group_name    = aws_db_subnet_group.this.name
-  vpc_security_group_ids  = [aws_security_group.db_sg.id]
-  parameter_group_name    = aws_db_parameter_group.custom.name
-  skip_final_snapshot     = true
+  instance_class         = "db.t3.micro"
+  allocated_storage      = 20
+  username               = var.db_username
+  password               = var.db_master_password
+  db_name                = var.db_name
+  multi_az               = false
+  publicly_accessible    = false
+  storage_type           = "gp2"
+  db_subnet_group_name   = aws_db_subnet_group.this.name
+  vpc_security_group_ids = [aws_security_group.db_sg.id]
+  parameter_group_name   = aws_db_parameter_group.custom.name
+  skip_final_snapshot    = true
 
   tags = {
     Name = "csye6225-rds-instance"
