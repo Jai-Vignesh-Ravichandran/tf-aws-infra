@@ -1,6 +1,6 @@
 provider "aws" {
   region  = var.aws_region
-  profile = "dev"
+  profile = "demo"
 }
 
 # Creating the VPC
@@ -156,8 +156,164 @@ resource "aws_instance" "webapp" {
     delete_on_termination = true
   }
 
+  # Pass PostgreSQL database connection details to the application via user_data
+user_data = <<-EOF
+  #!/bin/bash
+  # Create .env file with RDS details
+  cat <<EOT > /opt/csye6225/webapp/.env
+  APP_PORT=${var.app_port}
+  NODE_ENV=${var.node_env}
+  DB_USERNAME=${var.db_username}
+  DB_PASSWORD=${var.db_master_password}
+  DB_NAME=${var.db_name}
+  DB_HOST=${aws_db_instance.rds.address}
+  DB_PORT=${var.db_port}
+  TEST_DB_USERNAME=${var.test_db_username}
+  TEST_DB_PASSWORD=${var.db_master_password}
+  TEST_DB_NAME=${var.test_db_name}
+  TEST_DB_HOST=${aws_db_instance.rds.address}
+  TEST_DB_PORT=${var.test_db_port}
+  AWS_ACCESS_KEY_ID=${var.aws_access_key}
+  AWS_SECRET_ACCESS_KEY=${var.aws_secret_key}
+  AWS_REGION=${var.aws_region}
+  S3_BUCKET_NAME=${aws_s3_bucket.webapps3.bucket}
+  EOT
+  # Restart the app to load new .env
+  systemctl restart myapp.service
+EOF
+
+
   tags = {
     Name = "webapp-instance"
+  }
+
+  # depends_on = [aws_db_instance.rds]
+
+}
+
+
+# Generate a random UUID to use as the bucket name
+resource "random_uuid" "bucket_uuid" {}
+
+# S3 Bucket for webapp
+resource "aws_s3_bucket" "webapps3" {
+  bucket        = random_uuid.bucket_uuid.result
+  acl           = "private"
+  force_destroy = true
+
+  # Enable default server-side encryption using AES256
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
+        sse_algorithm = "AES256"
+      }
+    }
+  }
+
+  # Lifecycle rule to transition objects to STANDARD_IA after 30 days
+  lifecycle_rule {
+    id      = "transition-to-standard-ia"
+    enabled = true
+
+    transition {
+      days          = 30
+      storage_class = "STANDARD_IA"
+    }
+  }
+
+  tags = {
+    Name = "webapps3-bucket"
+  }
+}
+
+
+# Output the S3 bucket name
+output "webapps3_bucket_name" {
+  value = aws_s3_bucket.webapps3.bucket
+}
+
+
+# Database Security Group for RDS 
+resource "aws_security_group" "db_sg" {
+  name        = "database-security-group"
+  description = "Security group for RDS PostgreSQL instances"
+  vpc_id      = aws_vpc.this.id
+
+  ingress {
+    description    = "Allow PostgreSQL traffic from app security group"
+    from_port      = 5432                  
+    to_port        = 5432
+    protocol       = "tcp"
+    security_groups = [aws_security_group.app_sg.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "database-security-group"
+  }
+}
+
+
+
+# RDS Parameter Group for PostgreSQL
+resource "aws_db_parameter_group" "custom" {
+  name        = "csye6225-custom-parameter-group"
+  family      = "postgres17"  
+  description = "Custom parameter group for csye6225 PostgreSQL database"
+
+  parameter {
+    name         = "max_connections"
+    value        = "100"
+    apply_method = "pending-reboot"  
+  }
+  parameter {
+    name = "password_encryption"
+    value = "md5"
+  }
+
+  tags = {
+    Name = "csye6225-custom-parameter-group"
+  }
+}
+
+
+# DB Subnet Group for RDS
+resource "aws_db_subnet_group" "this" {
+  name       = "csye6225-db-subnet-group"
+  subnet_ids = aws_subnet.private[*].id
+
+  tags = {
+    Name = "csye6225-db-subnet-group"
+  }
+}
+
+
+# RDS Instance 
+resource "aws_db_instance" "rds" {
+  identifier              = "csye6225"
+  engine                  = "postgres"
+  # engine_version          = "17"            
+  instance_class          = "db.t3.micro"     
+  allocated_storage       = 20
+  username                = var.db_username
+  password                = var.db_master_password
+  db_name                 = var.db_name
+  multi_az                = false
+  publicly_accessible     = false
+  storage_type            = "gp2"
+  db_subnet_group_name    = aws_db_subnet_group.this.name
+  vpc_security_group_ids  = [aws_security_group.db_sg.id]
+  parameter_group_name    = aws_db_parameter_group.custom.name
+  skip_final_snapshot     = true
+
+  tags = {
+    Name = "csye6225-rds-instance"
   }
 }
 

@@ -38,3 +38,73 @@ variable "app_port" {
   type        = number
   default     = 8080
 }
+
+variable "aws_access_key" {
+  description = "AWS access key for S3"
+  type        = string
+}
+
+variable "aws_secret_key" {
+  description = "AWS secret key for S3"
+  type        = string
+}
+
+
+
+variable "node_env" {
+  description = "Environment for the application"
+  type        = string
+  default     = "cloud"
+}
+
+variable "db_username" {
+  description = "Database username"
+  type        = string
+  default     = "csye6225"
+}
+
+variable "db_master_password" {
+  description = "Database master password"
+  type        = string
+  sensitive   = true
+}
+
+variable "db_name" {
+  description = "Database name"
+  type        = string
+  default     = "csye6225"
+}
+
+variable "db_port" {
+  description = "Database port"
+  type        = number
+  default     = 5432
+}
+
+variable "test_db_username" {
+  description = "Test database username"
+  type        = string
+  default     = "csye6225"
+}
+
+variable "test_db_name" {
+  description = "Test database name"
+  type        = string
+  default     = "csye6225_test"
+}
+
+variable "test_db_port" {
+  description = "Test database port"
+  type        = number
+  default     = 5432
+}
+
+variable "aws_dev_id" {
+  description = "Test database port"
+  type        = number
+  default     = 5432
+}
+
+
+
+
