@@ -142,7 +142,7 @@ resource "aws_security_group" "app_sg" {
 resource "aws_iam_policy" "ec2_s3_policy" {
   name        = "ec2-s3-object-access"
   description = "Allow EC2 to put, get, delete objects in a specific S3 bucket"
- 
+
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -165,7 +165,7 @@ resource "aws_iam_policy" "ec2_s3_policy" {
     ]
   })
 }
- 
+
 resource "aws_iam_role_policy_attachment" "ec2_s3_policy_attachment" {
   role       = aws_iam_role.ec2_role.name
   policy_arn = aws_iam_policy.ec2_s3_policy.arn
@@ -175,7 +175,7 @@ resource "aws_iam_role_policy_attachment" "ec2_s3_policy_attachment" {
 
 resource "aws_iam_role" "ec2_role" {
   name = "ec2-s3-role"
- 
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -189,7 +189,7 @@ resource "aws_iam_role" "ec2_role" {
     ]
   })
 }
- 
+
 resource "aws_iam_instance_profile" "ec2_instance_profile" {
   name = "ec2-profile"
   role = aws_iam_role.ec2_role.name
