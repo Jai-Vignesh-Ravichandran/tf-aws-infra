@@ -138,6 +138,63 @@ resource "aws_security_group" "app_sg" {
   }
 }
 
+#policy for s3
+resource "aws_iam_policy" "ec2_s3_policy" {
+  name        = "ec2-s3-object-access"
+  description = "Allow EC2 to put, get, delete objects in a specific S3 bucket"
+ 
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject"
+        ],
+        Resource = "${aws_s3_bucket.webapps3.arn}/*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:ListBucket"
+        ],
+        Resource = aws_s3_bucket.webapps3.arn
+      }
+    ]
+  })
+}
+ 
+resource "aws_iam_role_policy_attachment" "ec2_s3_policy_attachment" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = aws_iam_policy.ec2_s3_policy.arn
+}
+
+#iamRole
+
+resource "aws_iam_role" "ec2_role" {
+  name = "ec2-s3-role"
+ 
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+ 
+resource "aws_iam_instance_profile" "ec2_instance_profile" {
+  name = "ec2-profile"
+  role = aws_iam_role.ec2_role.name
+}
+
 # EC2 Instance
 resource "aws_instance" "webapp" {
   ami                         = var.ami_id
@@ -145,6 +202,7 @@ resource "aws_instance" "webapp" {
   subnet_id                   = aws_subnet.public[0].id
   vpc_security_group_ids      = [aws_security_group.app_sg.id]
   associate_public_ip_address = true
+  iam_instance_profile        = aws_iam_instance_profile.ec2_instance_profile.name
 
   # Protect against accidental termination
   disable_api_termination = false
@@ -173,12 +231,13 @@ resource "aws_instance" "webapp" {
   TEST_DB_NAME=${var.test_db_name}
   TEST_DB_HOST=${aws_db_instance.rds.address}
   TEST_DB_PORT=${var.test_db_port}
-  AWS_ACCESS_KEY_ID=${var.aws_access_key}
-  AWS_SECRET_ACCESS_KEY=${var.aws_secret_key}
   AWS_REGION=${var.aws_region}
   S3_BUCKET_NAME=${aws_s3_bucket.webapps3.bucket}
   EOT
-  # Restart the app to load new .env
+  
+  INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+  sudo sed -i "s/{instance_id}/$INSTANCE_ID/" /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+  sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
   systemctl restart myapp.service
 EOF
 
@@ -187,49 +246,56 @@ EOF
     Name = "webapp-instance"
   }
 
-  # depends_on = [aws_db_instance.rds]
 
 }
 
+resource "random_uuid" "bucket_suffix" {}
 
-# Generate a random UUID to use as the bucket name
-resource "random_uuid" "bucket_uuid" {}
-
-# S3 Bucket for webapp
 resource "aws_s3_bucket" "webapps3" {
-  bucket        = random_uuid.bucket_uuid.result
-  acl           = "private"
-  force_destroy = true
+  bucket        = "csye6225-${random_uuid.bucket_suffix.result}"
+  force_destroy = true # Enable force destroy to allow Terraform to delete non-empty buckets
 
-  # Enable default server-side encryption using AES256
-  server_side_encryption_configuration {
-    rule {
-      apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"
-      }
+  tags = {
+    Name = "csye6225-webapps3-bucket"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "bucket_sse" {
+  bucket = aws_s3_bucket.webapps3.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = var.bucket_sse_algorithm
     }
   }
+}
 
-  # Lifecycle rule to transition objects to STANDARD_IA after 30 days
-  lifecycle_rule {
-    id      = "transition-to-standard-ia"
-    enabled = true
+resource "aws_s3_bucket_lifecycle_configuration" "bucket_lifecycle" {
+  bucket = aws_s3_bucket.webapps3.id
+
+  rule {
+    id     = "transition-to-ia"
+    status = "Enabled"
 
     transition {
-      days          = 30
+      days          = var.bucket_Transition_days
       storage_class = "STANDARD_IA"
     }
   }
-
-  tags = {
-    Name = "webapps3-bucket"
-  }
 }
-
-
 # Output the S3 bucket name
 output "webapps3_bucket_name" {
   value = aws_s3_bucket.webapps3.bucket
+}
+
+resource "aws_cloudwatch_log_group" "webapp_logs" {
+  name              = "WebAppLogs"
+  retention_in_days = 7
+}
+
+resource "aws_iam_role_policy_attachment" "cloudwatch_agent_policy" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
 }
 
 
