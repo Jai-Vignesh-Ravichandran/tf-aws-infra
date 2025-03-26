@@ -39,18 +39,6 @@ variable "app_port" {
   default     = 8080
 }
 
-variable "aws_access_key" {
-  description = "AWS access key for S3"
-  type        = string
-}
-
-variable "aws_secret_key" {
-  description = "AWS secret key for S3"
-  type        = string
-}
-
-
-
 variable "node_env" {
   description = "Environment for the application"
   type        = string
@@ -103,6 +91,18 @@ variable "aws_dev_id" {
   description = "Test database port"
   type        = number
   default     = 5432
+}
+
+variable "bucket_sse_algorithm" {
+  description = "Encription algorithm"
+  type        = string
+  default     = "AES256"
+}
+
+variable "bucket_Transition_days" {
+  description = "No of days the bucket holds the resources"
+  type        = number
+  default     = 30
 }
 
 
