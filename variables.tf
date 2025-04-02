@@ -105,6 +105,17 @@ variable "bucket_Transition_days" {
   default     = 30
 }
 
+variable "domain_name" {
+  description = "Domain name "
+  type        = string
+  default     = "jaivignesh.me"
+}
+
+variable "demo_zone_id" {
+  description = "Zone id"
+  type        = string
+  default     = "null"
+}
 
 
 
