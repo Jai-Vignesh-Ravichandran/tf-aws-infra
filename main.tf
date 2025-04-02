@@ -386,7 +386,7 @@ EOF
   )
 
   network_interfaces {
-    security_groups = [aws_security_group.app_sg.id]
+    security_groups             = [aws_security_group.app_sg.id]
     associate_public_ip_address = true
   }
 
