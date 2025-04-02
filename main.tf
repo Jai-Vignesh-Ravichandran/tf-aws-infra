@@ -457,8 +457,8 @@ resource "aws_cloudwatch_metric_alarm" "cpu_high" {
   namespace           = "AWS/EC2"
   period              = 60
   statistic           = "Average"
-  threshold           = 12
-  alarm_description   = "Scale up when average CPU > 12%"
+  threshold           = 7.2
+  alarm_description   = "Scale up when average CPU > 7%"
   dimensions = {
     AutoScalingGroupName = aws_autoscaling_group.webapp_asg.name
   }
@@ -474,8 +474,8 @@ resource "aws_cloudwatch_metric_alarm" "cpu_low" {
   namespace           = "AWS/EC2"
   period              = 60
   statistic           = "Average"
-  threshold           = 8
-  alarm_description   = "Scale down when average CPU < 8%"
+  threshold           = 6.8
+  alarm_description   = "Scale down when average CPU < 6.8%"
   dimensions = {
     AutoScalingGroupName = aws_autoscaling_group.webapp_asg.name
   }
