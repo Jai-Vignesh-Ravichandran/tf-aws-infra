@@ -56,5 +56,8 @@ terraform apply -var="region=us-east-1"
 
 Terraform maintains the state file (`terraform.tfstate`) to track managed infrastructure. If using remote state storage, configure it in `backend` settings inside `main.tf`.
 
+## certificateArn
+aws acm import-certificate --certificate fileb://certificate.crt --private-key fileb://private.key --certificate-chain fileb://ca_bundle.crt --region us-east-1 --profile demo
+
 
 

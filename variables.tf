@@ -117,5 +117,17 @@ variable "demo_zone_id" {
   default     = "null"
 }
 
+variable "db_secret_name" {
+  description = "Database name"
+  type        = string
+  default     = "csye622517"
+}
+
+variable "demo_certificate_arn" {
+  description = "demo certificate"
+  type        = string
+  default     = "summa"
+}
+
 
 
